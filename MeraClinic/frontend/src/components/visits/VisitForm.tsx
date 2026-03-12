@@ -56,12 +56,10 @@ export function VisitForm({
   const {
     patients,
     loading: loadingPatients,
-    selectedPatient: hookSelectedPatient,
     searchQuery,
     showResults,
     setSearchQuery,
     setShowResults,
-    selectPatient,
   } = usePatientSearch({
     disabled: isPatientLocked,
   });

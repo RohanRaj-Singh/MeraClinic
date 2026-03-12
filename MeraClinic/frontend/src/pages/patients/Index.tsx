@@ -23,14 +23,12 @@ export default function PatientsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | undefined>();
   const [selectedPatient, setSelectedPatient] = useState<PatientWithReports | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showVisitForm, setShowVisitForm] = useState(false);
 
   const { patients, loading, fetchPatients, searchPatients } = usePatients();
   const { createVisit, loading: creatingVisit } = useCreateVisit();
 
   const handleSearch = useCallback((search: string) => {
-    setSearchTerm(search);
     searchPatients(search);
   }, [searchPatients]);
 

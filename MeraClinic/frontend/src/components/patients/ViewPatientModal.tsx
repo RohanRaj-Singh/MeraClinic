@@ -2,7 +2,7 @@ import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Edit, Trash2, Plus, X, Phone, MessageCircle, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Patient, patientService } from '@/services/patient';
-import { Visit, visitService } from '@/services/visit';
+import { visitService } from '@/services/visit';
 import { fileService } from '@/services/file';
 import { useState, useEffect } from 'react';
 
@@ -47,7 +47,6 @@ export function ViewPatientModal({ patient, onClose, onEdit, onAddVisit, onDelet
   const queryClient = useQueryClient();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [galleryImages, setGalleryImages] = useState<{ visitId: number; visitNumber: string; visitDate: string; fileId: number; url: string }[]>([]);
-  const [loadingGallery, setLoadingGallery] = useState(false);
   
   // Fetch recent visits
   const { data: visitsData } = useQuery({

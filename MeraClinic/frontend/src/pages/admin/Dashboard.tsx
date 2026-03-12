@@ -4,7 +4,8 @@ import {
   Calendar, 
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Users
 } from 'lucide-react';
 import { adminService } from '@/services/admin';
 

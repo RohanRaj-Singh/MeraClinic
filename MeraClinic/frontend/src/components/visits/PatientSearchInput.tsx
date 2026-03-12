@@ -127,10 +127,9 @@ export function PatientSearchInput({
 interface PatientLockedDisplayProps {
   patient: PatientData | null;
   visitNumber?: string | null;
-  isGeneratingVisitNumber?: boolean;
 }
 
-export function PatientLockedDisplay({ patient, visitNumber, isGeneratingVisitNumber }: PatientLockedDisplayProps) {
+export function PatientLockedDisplay({ patient, visitNumber }: PatientLockedDisplayProps) {
   if (!patient) return null;
   
   return (
