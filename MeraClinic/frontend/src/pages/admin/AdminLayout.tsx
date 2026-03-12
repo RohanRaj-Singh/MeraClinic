@@ -3,24 +3,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   LayoutDashboard, 
   Building2, 
-  Settings, 
   LogOut,
   Menu,
   X,
   Bell,
   ChevronDown,
-  Shield,
-  Users,
-  Activity
+  Shield
 } from 'lucide-react';
 import { useState } from 'react';
 
 const adminNavigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
   { name: 'Clinics', href: '/admin/clinics', icon: Building2 },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Activity', href: '/admin/activity', icon: Activity },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export default function AdminLayout() {

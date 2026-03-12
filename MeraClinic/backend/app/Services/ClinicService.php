@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\AuditLog;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class ClinicService
 {
@@ -77,6 +78,8 @@ class ClinicService
     {
         $clinic = Clinic::create([
             'name' => $data['name'],
+            'slug' => Str::slug($data['name']) . '-' . time(),
+            'email' => $data['admin_email'],
             'address' => $data['address'] ?? null,
             'phone' => $data['phone'] ?? null,
             'whatsapp' => $data['whatsapp'] ?? null,

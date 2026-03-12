@@ -98,9 +98,9 @@ class ClinicController extends Controller
             'phone' => 'nullable|string|max:20',
             'whatsapp' => 'nullable|string|max:20',
             'patient_prefix' => 'nullable|string|max:10',
-            'admin_name' => 'nullable|string|max:255',
-            'admin_email' => 'nullable|email',
-            'admin_password' => 'nullable|string|min:6',
+            'admin_name' => 'required|string|max:255',
+            'admin_email' => 'required|email|unique:users,email',
+            'admin_password' => 'required|string|min:6',
             'expires_at' => 'nullable|date',
         ]);
 

@@ -31,7 +31,6 @@ interface Clinic {
 
 interface ClinicFormData {
   name: string;
-  slug: string;
   phone?: string;
   address?: string;
   patient_prefix?: string;
@@ -43,7 +42,6 @@ interface ClinicFormData {
 
 const initialFormData: ClinicFormData = {
   name: '',
-  slug: '',
   phone: '',
   address: '',
   patient_prefix: 'MC',
@@ -125,7 +123,6 @@ export default function Clinics() {
     setEditingClinic(clinic);
     setFormData({
       name: clinic.name,
-      slug: clinic.slug,
       phone: clinic.phone || '',
       address: clinic.address || '',
       patient_prefix: clinic.patient_prefix,
@@ -325,19 +322,6 @@ export default function Clinics() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Slug *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
                     className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20"
                   />
                 </div>

@@ -33,6 +33,19 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
+            {/* Admin Routes - Separate Layout (must be before catch-all) */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireSuperAdmin>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="clinics" element={<AdminClinics />} />
+            </Route>
+
             {/* Protected Routes with Layout */}
             <Route
               path="/"
@@ -47,19 +60,6 @@ function App() {
               <Route path="patients" element={<PatientsPage />} />
               <Route path="visits" element={<VisitsPage />} />
               <Route path="settings" element={<SettingsPage />} />
-            </Route>
-            
-            {/* Admin Routes - Separate Layout */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requireSuperAdmin>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="clinics" element={<AdminClinics />} />
             </Route>
             
             {/* Catch all - redirect to dashboard */}

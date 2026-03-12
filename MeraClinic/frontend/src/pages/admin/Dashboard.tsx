@@ -1,9 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { 
   Building2, 
-  Users, 
   Calendar, 
-  TrendingUp,
   AlertTriangle,
   CheckCircle,
   XCircle
@@ -144,20 +142,6 @@ export default function AdminDashboard() {
           >
             <Building2 className="h-4 w-4" />
             Manage Clinics
-          </a>
-          <a
-            href="/admin/users"
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#1565C0] px-4 py-3 text-sm font-medium text-white hover:bg-[#0D47A1]"
-          >
-            <Users className="h-4 w-4" />
-            Manage Users
-          </a>
-          <a
-            href="/admin/activity"
-            className="flex items-center justify-center gap-2 rounded-lg bg-gray-600 px-4 py-3 text-sm font-medium text-white hover:bg-gray-700"
-          >
-            <TrendingUp className="h-4 w-4" />
-            View Activity
           </a>
         </div>
       </div>
