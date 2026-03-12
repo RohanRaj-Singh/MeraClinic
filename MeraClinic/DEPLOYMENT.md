@@ -2,7 +2,7 @@
 
 This setup assumes:
 
-- Frontend: `https://clinic.mrsinghdev.com`
+- Frontend: `https://meraclinic.mrsinghdev.com`
 - API: `https://api.clinic.mrsinghdev.com`
 - Frontend is deployed as a static Vite build
 - Backend is deployed as Laravel behind Nginx + PHP-FPM
@@ -56,7 +56,7 @@ Create `backend/.env` from the example and set at minimum:
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://api.clinic.mrsinghdev.com
-FRONTEND_URL=https://clinic.mrsinghdev.com
+FRONTEND_URL=https://meraclinic.mrsinghdev.com
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -65,7 +65,7 @@ DB_DATABASE=mera_clinic
 DB_USERNAME=your_db_user
 DB_PASSWORD=your_db_password
 
-SANCTUM_STATEFUL_DOMAINS=clinic.mrsinghdev.com,api.clinic.mrsinghdev.com
+SANCTUM_STATEFUL_DOMAINS=meraclinic.mrsinghdev.com,api.clinic.mrsinghdev.com
 ```
 
 Install and prepare:
@@ -85,7 +85,7 @@ php artisan view:cache
 
 Use separate server blocks:
 
-- `clinic.mrsinghdev.com` serves only the frontend static build
+- `meraclinic.mrsinghdev.com` serves only the frontend static build
 - `api.clinic.mrsinghdev.com` serves Laravel from `backend/public`
 
 Do not proxy `/api` through the frontend domain in production. The frontend should call the API domain directly via `VITE_API_URL`.
@@ -95,7 +95,7 @@ Do not proxy `/api` through the frontend domain in production. The frontend shou
 Example:
 
 ```bash
-sudo certbot --nginx -d clinic.mrsinghdev.com -d api.clinic.mrsinghdev.com
+sudo certbot --nginx -d meraclinic.mrsinghdev.com -d api.clinic.mrsinghdev.com
 ```
 
 ## Deploy Steps
@@ -121,7 +121,7 @@ npm run build
 Frontend:
 
 ```bash
-curl -I https://clinic.mrsinghdev.com
+curl -I https://meraclinic.mrsinghdev.com
 ```
 
 API:
