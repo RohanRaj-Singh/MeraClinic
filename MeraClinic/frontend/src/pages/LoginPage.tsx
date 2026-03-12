@@ -19,8 +19,15 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      // Login and get user from response
+      const user = await login(email, password);
+      
+      // Redirect based on user role
+      if (user.role === 'super_admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message || 'Invalid credentials');
     } finally {

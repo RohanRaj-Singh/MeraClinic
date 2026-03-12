@@ -5,7 +5,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: {
     name: string;
     email: string;
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const response = await authService.login({ email, password });
     
     if ('otp_required' in response && response.otp_required) {
@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     authService.setToken(response.data.token);
     setUser(response.data.user);
+    return response.data.user;
   };
 
   const register = async (data: {
