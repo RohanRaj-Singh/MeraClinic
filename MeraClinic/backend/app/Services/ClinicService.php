@@ -11,6 +11,36 @@ use Illuminate\Support\Facades\Hash;
 class ClinicService
 {
     /**
+     * Get current user's clinic
+     */
+    public function getCurrentClinic(): ?Clinic
+    {
+        $clinicId = auth()->user()->clinic_id;
+        return Clinic::find($clinicId);
+    }
+
+    /**
+     * Update current user's clinic
+     */
+    public function updateCurrent(array $data): Clinic
+    {
+        $clinicId = auth()->user()->clinic_id;
+        $clinic = Clinic::findOrFail($clinicId);
+
+        $clinic->update([
+            'name' => $data['name'] ?? $clinic->name,
+            'address' => $data['address'] ?? $clinic->address,
+            'phone' => $data['phone'] ?? $clinic->phone,
+            'whatsapp' => $data['whatsapp'] ?? $clinic->whatsapp,
+            'patient_prefix' => isset($data['patient_prefix'])
+                ? strtoupper($data['patient_prefix'])
+                : $clinic->patient_prefix,
+        ]);
+
+        return $clinic->fresh();
+    }
+
+    /**
      * Get all clinics (Super Admin only)
      */
     public function getAll(array $filters = []): LengthAwarePaginator
@@ -50,7 +80,7 @@ class ClinicService
             'address' => $data['address'] ?? null,
             'phone' => $data['phone'] ?? null,
             'whatsapp' => $data['whatsapp'] ?? null,
-            'patient_prefix' => $data['patient_prefix'] ?? 'MC',
+            'patient_prefix' => strtoupper($data['patient_prefix'] ?? Clinic::DEFAULT_PATIENT_PREFIX),
             'reference_counter' => 0,
             'is_active' => true,
             'expires_at' => $data['expires_at'] ?? null,
@@ -103,7 +133,9 @@ class ClinicService
             'address' => $data['address'] ?? $clinic->address,
             'phone' => $data['phone'] ?? $clinic->phone,
             'whatsapp' => $data['whatsapp'] ?? $clinic->whatsapp,
-            'patient_prefix' => $data['patient_prefix'] ?? $clinic->patient_prefix,
+            'patient_prefix' => isset($data['patient_prefix'])
+                ? strtoupper($data['patient_prefix'])
+                : $clinic->patient_prefix,
             'expires_at' => $data['expires_at'] ?? $clinic->expires_at,
         ]);
 

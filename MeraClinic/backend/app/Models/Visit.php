@@ -7,9 +7,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Visit extends BaseModel
 {
+    protected $appends = [
+        'balance',
+        'is_paid',
+        'payment_status',
+    ];
+
     protected $fillable = [
         'clinic_id',
         'patient_id',
+        'user_id',
+        'visit_number',
+        'visit_counter',
         'visit_date',
         'visit_time',
         'prescription',
@@ -20,7 +29,6 @@ class Visit extends BaseModel
 
     protected $casts = [
         'visit_date' => 'date',
-        'visit_time' => 'datetime',
         'total_amount' => 'decimal:2',
         'received_amount' => 'decimal:2',
     ];

@@ -37,7 +37,7 @@ export function useVisits(initialFilters?: VisitFilters) {
   }, [fetchVisits]);
 
   const searchVisits = useCallback((search: string) => {
-    setFilters(prev => ({ ...prev, patient_id: search ? Number(search) : undefined }));
+    setFilters(prev => ({ ...prev, search: search || undefined }));
   }, []);
 
   const filterByDate = useCallback((fromDate?: string, toDate?: string) => {

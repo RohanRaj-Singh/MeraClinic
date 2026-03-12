@@ -5,6 +5,7 @@ export interface Visit {
   id: number;
   clinic_id: number;
   patient_id: number;
+  visit_number: string;
   visit_date: string;
   visit_time: string;
   prescription?: string;
@@ -52,9 +53,9 @@ export interface File {
   clinic_id: number;
   patient_id?: number;
   visit_id?: number;
+  type: 'image' | 'pdf' | 'document';
   file_name: string;
   file_path: string;
-  file_type: 'image' | 'pdf' | 'other';
   file_size: number;
   mime_type: string;
   url: string;
@@ -66,6 +67,8 @@ export interface VisitFilters {
   date_to?: string;
   payment_status?: 'paid' | 'partial' | 'unpaid';
   page?: number;
+  per_page?: number;
+  search?: string;
 }
 
 export interface CreateVisitData {
@@ -97,6 +100,8 @@ export const visitService = {
     if (filters.date_to) params.append('date_to', filters.date_to);
     if (filters.payment_status) params.append('payment_status', filters.payment_status);
     if (filters.page) params.append('page', String(filters.page));
+    if (filters.per_page) params.append('per_page', String(filters.per_page));
+    if (filters.search) params.append('search', filters.search);
 
     const queryString = params.toString();
     const endpoint = `/v1/visits${queryString ? `?${queryString}` : ''}`;
@@ -127,6 +132,11 @@ export const visitService = {
   // Record payment
   async recordPayment(id: number, amount: number): Promise<ApiResponse<Visit>> {
     return api.post<ApiResponse<Visit>>(`/v1/visits/${id}/payment`, { amount });
+  },
+
+  // Get next visit number for a patient
+  async getNextVisitNumber(patientId: number): Promise<ApiResponse<{ visit_number: string }>> {
+    return api.get<ApiResponse<{ visit_number: string }>>(`/v1/visits/next-number/${patientId}`);
   },
 };
 

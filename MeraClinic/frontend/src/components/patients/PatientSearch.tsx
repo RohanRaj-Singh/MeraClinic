@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { X } from 'lucide-react';
 
 interface PatientSearchProps {
   onSearch: (search: string) => void;
@@ -7,11 +8,30 @@ interface PatientSearchProps {
 
 export function PatientSearch({ onSearch, placeholder }: PatientSearchProps) {
   const [value, setValue] = useState('');
+  const [debouncedValue, setDebouncedValue] = useState('');
+
+  // Debounce the search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [value]);
+
+  // Call onSearch when debounced value changes
+  useEffect(() => {
+    onSearch(debouncedValue);
+  }, [debouncedValue, onSearch]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setValue(newValue);
-    onSearch(newValue);
+    setValue(e.target.value);
+  }, []);
+
+  const handleClear = useCallback(() => {
+    setValue('');
+    setDebouncedValue('');
+    onSearch('');
   }, [onSearch]);
 
   return (
@@ -30,8 +50,17 @@ export function PatientSearch({ onSearch, placeholder }: PatientSearchProps) {
           placeholder={placeholder || "Search patients by name, phone, or reference number..."}
           value={value}
           onChange={handleChange}
-          className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition"
+          className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition"
         />
+        {value && (
+          <button
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            type="button"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
     </div>
   );

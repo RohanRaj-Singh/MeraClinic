@@ -17,8 +17,17 @@ export interface Patient {
   prescription?: string;
   notes?: string;
   disease_list?: Disease[];
+  reports?: PatientReport[];
   created_at: string;
   updated_at: string;
+}
+
+export interface PatientReport {
+  id: number;
+  report_type_id: number;
+  report_type_name?: string;
+  value: string;
+  notes?: string;
 }
 
 export interface Disease {

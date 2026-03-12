@@ -14,6 +14,21 @@ class VisitController extends Controller
     ) {}
 
     /**
+     * Get next visit number for a patient
+     */
+    public function getNextVisitNumber(int $patientId): JsonResponse
+    {
+        $visitNumber = $this->visitService->getNextVisitNumber($patientId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'visit_number' => $visitNumber,
+            ],
+        ]);
+    }
+
+    /**
      * Get all visits
      */
     public function index(Request $request): JsonResponse

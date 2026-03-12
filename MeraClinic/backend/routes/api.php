@@ -35,6 +35,13 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::put('/auth/password', [AuthController::class, 'updatePassword']);
 
+    // Clinic (current user's clinic)
+    Route::get('/clinic', [ClinicController::class, 'current']);
+    Route::put('/clinic', [ClinicController::class, 'updateCurrent']);
+
+    // Profile (current user)
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
@@ -53,6 +60,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::put('/visits/{visit}', [VisitController::class, 'update']);
     Route::delete('/visits/{visit}', [VisitController::class, 'destroy']);
     Route::post('/visits/{visit}/payment', [VisitController::class, 'recordPayment']);
+    Route::get('/visits/next-number/{patientId}', [VisitController::class, 'getNextVisitNumber']);
 
     // Patient Visits
     Route::get('/patients/{patient}/visits', [VisitController::class, 'index']);

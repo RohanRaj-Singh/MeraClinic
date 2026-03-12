@@ -15,7 +15,7 @@ class PatientService
      */
     public function getAll(array $filters = []): LengthAwarePaginator
     {
-        $query = Patient::with(['clinic', 'diseaseList']);
+        $query = Patient::with(['clinic', 'diseaseList', 'reports.reportType']);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -40,7 +40,7 @@ class PatientService
      */
     public function getById(int $id): ?Patient
     {
-        return Patient::with(['clinic', 'diseaseList', 'visits', 'reports', 'files'])->find($id);
+        return Patient::with(['clinic', 'diseaseList', 'visits', 'reports.reportType', 'files'])->find($id);
     }
 
     /**

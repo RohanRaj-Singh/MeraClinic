@@ -8,13 +8,18 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ visit, onClose, onSubmit }: PaymentModalProps) {
-  const [amount, setAmount] = useState(visit.balance);
+  const totalAmount = Number(visit.total_amount ?? 0);
+  const receivedAmount = Number(visit.received_amount ?? 0);
+  const balance = Number.isFinite(Number(visit.balance))
+    ? Number(visit.balance)
+    : totalAmount - receivedAmount;
+  const [amount, setAmount] = useState(balance);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount <= 0 || amount > visit.balance) {
+    if (amount <= 0 || amount > balance) {
       setError('Invalid amount');
       return;
     }
@@ -44,15 +49,15 @@ export function PaymentModal({ visit, onClose, onSubmit }: PaymentModalProps) {
           <div className="mb-6">
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">Total Amount:</span>
-              <span className="font-medium">PKR {visit.total_amount}</span>
+              <span className="font-medium">PKR {totalAmount}</span>
             </div>
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">Already Paid:</span>
-              <span className="font-medium">PKR {visit.received_amount}</span>
+              <span className="font-medium">PKR {receivedAmount}</span>
             </div>
             <div className="flex justify-between pt-2 border-t border-gray-100">
               <span className="text-gray-900 font-medium">Balance:</span>
-              <span className="font-semibold text-red-600">PKR {visit.balance}</span>
+              <span className="font-semibold text-red-600">PKR {balance}</span>
             </div>
           </div>
 
@@ -65,20 +70,20 @@ export function PaymentModal({ visit, onClose, onSubmit }: PaymentModalProps) {
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
               min={0}
-              max={visit.balance}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              max={balance}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
             <div className="flex gap-2 mt-2">
               <button
                 type="button"
-                onClick={() => setAmount(visit.balance)}
+                onClick={() => setAmount(balance)}
                 className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
               >
                 Full Amount
               </button>
               <button
                 type="button"
-                onClick={() => setAmount(Math.ceil(visit.balance / 2))}
+                onClick={() => setAmount(Math.ceil(balance / 2))}
                 className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
               >
                 Half
@@ -96,7 +101,7 @@ export function PaymentModal({ visit, onClose, onSubmit }: PaymentModalProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {isLoading ? 'Recording...' : 'Record Payment'}
             </button>

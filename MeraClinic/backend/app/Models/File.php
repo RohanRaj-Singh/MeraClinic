@@ -6,13 +6,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class File extends BaseModel
 {
+    protected $appends = [
+        'url',
+        'is_image',
+        'is_pdf',
+        'formatted_size',
+    ];
+
     protected $fillable = [
         'clinic_id',
         'patient_id',
         'visit_id',
+        'type',
         'file_name',
         'file_path',
-        'file_type',
         'file_size',
         'mime_type',
     ];
@@ -24,7 +31,7 @@ class File extends BaseModel
     // Constants
     public const TYPE_IMAGE = 'image';
     public const TYPE_PDF = 'pdf';
-    public const TYPE_OTHER = 'other';
+    public const TYPE_OTHER = 'document';
 
     // Relationships
     public function clinic(): BelongsTo
@@ -50,12 +57,12 @@ class File extends BaseModel
 
     public function getIsImageAttribute(): bool
     {
-        return $this->file_type === self::TYPE_IMAGE;
+        return $this->type === self::TYPE_IMAGE;
     }
 
     public function getIsPdfAttribute(): bool
     {
-        return $this->file_type === self::TYPE_PDF;
+        return $this->type === self::TYPE_PDF;
     }
 
     public function getFormattedSizeAttribute(): string

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Clinic extends Model
 {
+    public const DEFAULT_PATIENT_PREFIX = 'MC';
+
     protected $fillable = [
         'name',
         'slug',
@@ -62,7 +64,9 @@ class Clinic extends Model
         $this->reference_counter = ($this->reference_counter ?? 0) + 1;
         $this->save();
 
-        return $this->patient_prefix . '-' . str_pad($this->reference_counter, 4, '0', STR_PAD_LEFT);
+        $patientPrefix = strtoupper(trim($this->patient_prefix ?: self::DEFAULT_PATIENT_PREFIX));
+
+        return $patientPrefix . '-' . str_pad($this->reference_counter, 4, '0', STR_PAD_LEFT);
     }
 
     // Check subscription status

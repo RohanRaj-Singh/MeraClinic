@@ -33,6 +33,41 @@ class ClinicController extends Controller
     }
 
     /**
+     * Get current user's clinic
+     */
+    public function current(): JsonResponse
+    {
+        $clinic = $this->clinicService->getCurrentClinic();
+
+        return response()->json([
+            'success' => true,
+            'data' => $clinic,
+        ]);
+    }
+
+    /**
+     * Update current user's clinic
+     */
+    public function updateCurrent(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'phone' => 'nullable|string|max:20',
+            'whatsapp' => 'nullable|string|max:20',
+            'patient_prefix' => 'nullable|string|max:10',
+        ]);
+
+        $clinic = $this->clinicService->updateCurrent($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Clinic updated successfully',
+            'data' => $clinic,
+        ]);
+    }
+
+    /**
      * Get clinic by ID
      */
     public function show(int $id): JsonResponse

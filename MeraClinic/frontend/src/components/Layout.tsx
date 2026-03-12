@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   Bell,
-  ChevronDown
+  ChevronDown,
+  Shield
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -21,6 +22,8 @@ const navigation = [
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
+
+const adminLink = { name: 'Admin Panel', href: '/admin', icon: Shield };
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -73,6 +76,19 @@ export default function Layout() {
                 </Link>
               );
             })}
+            {user?.role === 'super_admin' && (
+              <>
+                <div className="my-2 border-t border-gray-200" />
+                <Link
+                  to={adminLink.href}
+                  className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-[#1565C0] hover:bg-gray-100"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <adminLink.icon className="w-5 h-5 mr-3" />
+                  {adminLink.name}
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </div>
@@ -109,6 +125,18 @@ export default function Layout() {
                 </Link>
               );
             })}
+            {user?.role === 'super_admin' && (
+              <>
+                <div className="my-2 border-t border-gray-200" />
+                <Link
+                  to={adminLink.href}
+                  className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-[#1565C0] hover:bg-gray-100"
+                >
+                  <adminLink.icon className="w-5 h-5 mr-3" />
+                  {adminLink.name}
+                </Link>
+              </>
+            )}
           </nav>
           <div className="p-4 border-t border-gray-200">
             <button

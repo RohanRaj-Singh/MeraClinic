@@ -23,7 +23,7 @@ class AuthService
             'slug' => Str::slug($data['clinic_name']) . '-' . time(),
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
-            'patient_prefix' => $data['patient_prefix'] ?? 'MC',
+            'patient_prefix' => strtoupper($data['patient_prefix'] ?? Clinic::DEFAULT_PATIENT_PREFIX),
             'patient_counter' => 0,
             'subscription_status' => 'trial',
             'is_active' => true,

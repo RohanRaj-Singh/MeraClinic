@@ -8,6 +8,15 @@ interface VisitCardProps {
 }
 
 export function VisitCard({ visit, onClick, onPaymentClick }: VisitCardProps) {
+  const totalAmount = Number(visit.total_amount ?? 0);
+  const receivedAmount = Number(visit.received_amount ?? 0);
+  const balance = Number.isFinite(Number(visit.balance))
+    ? Number(visit.balance)
+    : totalAmount - receivedAmount;
+  const paymentStatus = visit.payment_status || (
+    receivedAmount <= 0 ? 'unpaid' : balance > 0 ? 'partial' : 'paid'
+  );
+
   const statusColors = {
     paid: 'bg-green-100 text-green-800',
     partial: 'bg-yellow-100 text-yellow-800',
@@ -48,7 +57,7 @@ export function VisitCard({ visit, onClick, onPaymentClick }: VisitCardProps) {
       onClick={onClick}
       className={cn(
         'bg-white rounded-lg border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow',
-        onClick && 'hover:border-primary-300'
+        onClick && 'hover:border-primary-light'
       )}
     >
       <div className="flex justify-between items-start mb-3">
@@ -61,14 +70,21 @@ export function VisitCard({ visit, onClick, onPaymentClick }: VisitCardProps) {
             {visit.visit_time && ` • ${formatTime(visit.visit_time)}`}
           </p>
         </div>
-        <span
-          className={cn(
-            'px-2 py-1 text-xs font-medium rounded-full',
-            statusColors[visit.payment_status]
+        <div className="flex flex-col items-end gap-2">
+          {visit.visit_number && (
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              {visit.visit_number}
+            </span>
           )}
-        >
-          {statusLabels[visit.payment_status]}
-        </span>
+          <span
+            className={cn(
+              'px-2 py-1 text-xs font-medium rounded-full',
+              statusColors[paymentStatus]
+            )}
+          >
+            {statusLabels[paymentStatus]}
+          </span>
+        </div>
       </div>
 
       {visit.prescription && (
@@ -81,24 +97,24 @@ export function VisitCard({ visit, onClick, onPaymentClick }: VisitCardProps) {
       <div className="flex justify-between items-center pt-3 border-t border-gray-100">
         <div>
           <p className="text-xs text-gray-500">Total</p>
-          <p className="font-semibold text-gray-900">{formatCurrency(visit.total_amount)}</p>
+          <p className="font-semibold text-gray-900">{formatCurrency(totalAmount)}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500">Balance</p>
           <p className={cn(
             'font-semibold',
-            visit.balance > 0 ? 'text-red-600' : 'text-green-600'
+            balance > 0 ? 'text-red-600' : 'text-green-600'
           )}>
-            {formatCurrency(visit.balance)}
+            {formatCurrency(balance)}
           </p>
         </div>
-        {visit.balance > 0 && onPaymentClick && (
+        {balance > 0 && onPaymentClick && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onPaymentClick();
             }}
-            className="px-3 py-1.5 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
+            className="px-3 py-1.5 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors"
           >
             Pay
           </button>

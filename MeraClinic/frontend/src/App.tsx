@@ -4,11 +4,15 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Layout from '@/components/Layout'
+import AdminLayout from '@/pages/admin/AdminLayout'
+import AdminDashboard from '@/pages/admin/Dashboard'
+import AdminClinics from '@/pages/admin/Clinics'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import PatientsPage from '@/pages/patients/Index'
 import VisitsPage from '@/pages/visits/Index'
+import SettingsPage from '@/pages/SettingsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +46,20 @@ function App() {
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="patients" element={<PatientsPage />} />
               <Route path="visits" element={<VisitsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            
+            {/* Admin Routes - Separate Layout */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireSuperAdmin>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="clinics" element={<AdminClinics />} />
             </Route>
             
             {/* Catch all - redirect to dashboard */}

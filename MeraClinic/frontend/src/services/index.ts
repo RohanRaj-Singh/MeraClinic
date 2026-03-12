@@ -1,4 +1,5 @@
 export { authService } from './auth';
+export { fileService } from './file';
 export { patientService } from './patient';
 export { visitService } from './visit';
 export { dashboardService } from './dashboard';

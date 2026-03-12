@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Report extends BaseModel
 {
+    protected $appends = [
+        'report_type_name',
+    ];
+
     protected $fillable = [
         'clinic_id',
         'patient_id',
@@ -39,5 +43,11 @@ class Report extends BaseModel
     public function reportType(): BelongsTo
     {
         return $this->belongsTo(ReportType::class);
+    }
+
+    // Accessor for report_type_name
+    public function getReportTypeNameAttribute(): ?string
+    {
+        return $this->reportType?->name;
     }
 }

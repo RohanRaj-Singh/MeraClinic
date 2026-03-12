@@ -26,7 +26,7 @@ class FileService
         }
 
         if (!empty($filters['file_type'])) {
-            $query->where('file_type', $filters['file_type']);
+            $query->where('type', $filters['file_type']);
         }
 
         return $query->orderBy('created_at', 'desc')->paginate(20);
@@ -63,7 +63,7 @@ class FileService
             'visit_id' => $data['visit_id'] ?? null,
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $path,
-            'file_type' => $fileType,
+            'type' => $fileType,
             'file_size' => $file->getSize(),
             'mime_type' => $file->getMimeType(),
         ]);
@@ -149,6 +149,18 @@ class FileService
             return null;
         }
 
-        return Storage::disk('public')->download($file->file_path, $file->file_name);
+        if (!Storage::disk('public')->exists($file->file_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->response(
+            $file->file_path,
+            $file->file_name,
+            [
+                'Content-Type' => $file->mime_type ?: 'application/octet-stream',
+                'Content-Disposition' => 'inline; filename="' . addslashes($file->file_name) . '"',
+                'Cache-Control' => 'private, max-age=3600',
+            ]
+        );
     }
 }

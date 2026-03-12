@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Patient, CreatePatientData } from '@/services/patient';
 import { ReportType, reportTypeService } from '@/services/reportType';
+import { ChevronDown, ChevronUp, FileText } from 'lucide-react';
 
 interface PatientFormProps {
   patient?: Patient;
@@ -50,6 +51,7 @@ export function PatientForm({ patient, onSubmit, onCancel, isLoading }: PatientF
   const [reportTypes, setReportTypes] = useState<ReportType[]>([]);
   const [reportValues, setReportValues] = useState<ReportValue[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
+  const [showReports, setShowReports] = useState(false); // Collapsed by default
   
   useEffect(() => {
     // Fetch active report types
@@ -60,12 +62,21 @@ export function PatientForm({ patient, onSubmit, onCancel, isLoading }: PatientF
         if (response.data) {
           setReportTypes(response.data);
           
+          // Get existing reports from patient if available
+          const existingReports = patient?.reports || [];
+          
           // Initialize report values for each report type
-          const initialValues = response.data.map(rt => ({
-            report_type_id: rt.id,
-            value: '',
-            notes: '',
-          }));
+          const initialValues = response.data.map(rt => {
+            // Find if this report type already has a value for this patient
+            const existingReport = existingReports.find(
+              (er: any) => er.report_type_id === rt.id || er.reportType?.id === rt.id
+            );
+            return {
+              report_type_id: rt.id,
+              value: existingReport?.value || '',
+              notes: existingReport?.notes || '',
+            };
+          });
           setReportValues(initialValues);
         }
       } catch (error) {
@@ -76,7 +87,7 @@ export function PatientForm({ patient, onSubmit, onCancel, isLoading }: PatientF
     };
     
     fetchReportTypes();
-  }, []);
+  }, [patient]);
   
   const [formData, setFormData] = useState<CreatePatientData>({
     name: patient?.name || '',
@@ -312,56 +323,72 @@ export function PatientForm({ patient, onSubmit, onCancel, isLoading }: PatientF
         />
       </div>
 
-      {/* Reports Section */}
+      {/* Reports Section - Collapsible */}
       {reportTypes.length > 0 && (
         <div className="border-t border-gray-200 pt-4">
-          <div className="mb-3">
-            <h3 className="text-lg font-medium text-gray-900">{translations.reports}</h3>
-            <p className="text-sm text-gray-500">{translations.reportsDescription}</p>
-          </div>
-          
-          {loadingReports ? (
-            <div className="flex items-center justify-center py-4">
-              <div className="w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+          <button
+            type="button"
+            onClick={() => setShowReports(!showReports)}
+            className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+          >
+            <div className="flex items-center gap-2">
+              <FileText size={18} className="text-[#2E7D32]" />
+              <span className="font-medium text-gray-900">{translations.reports}</span>
+              <span className="text-sm text-gray-500">({reportTypes.length} tests)</span>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {reportTypes.map((reportType) => {
-                const reportValue = reportValues.find(rv => rv.report_type_id === reportType.id);
-                return (
-                  <div key={reportType.id} className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        {reportType.name}
-                        {reportType.unit && (
-                          <span className="text-gray-400 ml-1">({reportType.unit})</span>
-                        )}
-                      </label>
-                      {reportType.normal_range && (
-                        <span className="text-xs text-gray-500">
-                          {translations.normalRange}: {reportType.normal_range}
-                        </span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={reportValue?.value || ''}
-                        onChange={(e) => handleReportValueChange(reportType.id, 'value', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-                        placeholder="Enter value..."
-                      />
-                      <input
-                        type="text"
-                        value={reportValue?.notes || ''}
-                        onChange={(e) => handleReportValueChange(reportType.id, 'notes', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-                        placeholder="Notes (optional)"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+            {showReports ? (
+              <ChevronUp size={20} className="text-gray-500" />
+            ) : (
+              <ChevronDown size={20} className="text-gray-500" />
+            )}
+          </button>
+          
+          {showReports && (
+            <div className="mt-3">
+              {loadingReports ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reportTypes.map((reportType) => {
+                    const reportValue = reportValues.find(rv => rv.report_type_id === reportType.id);
+                    return (
+                      <div key={reportType.id} className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <label className="block text-sm font-medium text-gray-700">
+                            {reportType.name}
+                            {reportType.unit && (
+                              <span className="text-gray-400 ml-1">({reportType.unit})</span>
+                            )}
+                          </label>
+                          {reportType.normal_range && (
+                            <span className="text-xs text-gray-500">
+                              {translations.normalRange}: {reportType.normal_range}
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={reportValue?.value || ''}
+                            onChange={(e) => handleReportValueChange(reportType.id, 'value', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                            placeholder="Enter value..."
+                          />
+                          <input
+                            type="text"
+                            value={reportValue?.notes || ''}
+                            onChange={(e) => handleReportValueChange(reportType.id, 'notes', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                            placeholder="Notes (optional)"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
