@@ -148,11 +148,19 @@ class AuthService
     {
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $expiresAt = now()->addMinutes(10);
+        $mailDriver = (string) config('mail.default');
         
         // Store OTP in cache (expires in 10 minutes)
         cache()->put('otp_' . $user->id, $otp, $expiresAt);
 
         try {
+            Log::info('Attempting to send login OTP email', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'mailer' => $mailDriver,
+                'expires_at' => $expiresAt->toISOString(),
+            ]);
+
             Mail::to($user->email)->send(
                 new OtpMail(
                     user: $user,
@@ -160,10 +168,18 @@ class AuthService
                     expiresAt: $expiresAt->setTimezone(config('app.timezone'))->format('d M Y h:i A')
                 )
             );
+
+            Log::info('Login OTP email accepted by mail transport', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'mailer' => $mailDriver,
+                'expires_at' => $expiresAt->toISOString(),
+            ]);
         } catch (\Throwable $exception) {
             Log::error('Failed to send login OTP email', [
                 'user_id' => $user->id,
                 'email' => $user->email,
+                'mailer' => $mailDriver,
                 'otp' => $otp,
                 'expires_at' => $expiresAt->toISOString(),
                 'error' => $exception->getMessage(),
