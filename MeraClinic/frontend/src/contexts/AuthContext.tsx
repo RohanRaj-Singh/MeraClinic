@@ -99,6 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clinic_name: string;
     phone?: string;
   }) => {
+    authService.setToken(null);
+    setUser(null);
+
     const response = await authService.register(data);
     return response.data;
   };
