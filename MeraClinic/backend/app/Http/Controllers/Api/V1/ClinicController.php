@@ -100,7 +100,7 @@ class ClinicController extends Controller
             'patient_prefix' => 'nullable|string|max:10',
             'admin_name' => 'required|string|max:255',
             'admin_email' => 'required|email|unique:users,email',
-            'admin_password' => 'required|string|min:6',
+            'admin_password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/'],
             'expires_at' => 'nullable|date',
         ]);
 
@@ -190,7 +190,7 @@ class ClinicController extends Controller
     public function resetPassword(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([
-            'new_password' => 'required|string|min:6',
+            'new_password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/'],
         ]);
 
         $reset = $this->clinicService->resetPassword($id, $validated['new_password']);

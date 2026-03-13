@@ -1,11 +1,18 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService, User } from '@/services/auth';
+import { authService, AuthResponse, OtpChallengeResponse, User } from '@/services/auth';
+import { AUTH_EXPIRED_EVENT } from '@/lib/api';
+
+interface LoginResult {
+  user?: User;
+  otpRequired: boolean;
+  challenge?: OtpChallengeResponse;
+}
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string) => Promise<LoginResult>;
   register: (data: {
     name: string;
     email: string;
@@ -14,45 +21,74 @@ interface AuthContextType {
     clinic_name: string;
     phone?: string;
   }) => Promise<void>;
+  verifyOtp: (email: string, otp: string) => Promise<User>;
+  resendOtp: (email: string) => Promise<OtpChallengeResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function isOtpChallengeResponse(data: AuthResponse | OtpChallengeResponse): data is OtpChallengeResponse {
+  return 'otp_expires_at' in data && !('token' in data);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
     const token = authService.getToken();
-    if (token) {
+    if (token && !authService.isSessionExpired()) {
       authService.me()
         .then((response) => {
           setUser(response.data);
         })
         .catch(() => {
-          authService.setToken('');
+          authService.setToken(null);
         })
         .finally(() => {
           setIsLoading(false);
         });
     } else {
+      authService.setToken(null);
       setIsLoading(false);
     }
   }, []);
 
-  const login = async (email: string, password: string): Promise<User> => {
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      authService.setToken(null);
+      setUser(null);
+    };
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleSessionExpired);
+
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleSessionExpired);
+    };
+  }, []);
+
+  const login = async (email: string, password: string): Promise<LoginResult> => {
     const response = await authService.login({ email, password });
     
-    if ('otp_required' in response && response.otp_required) {
-      throw new Error('OTP_REQUIRED');
+    if (response.otp_required && isOtpChallengeResponse(response.data)) {
+      return {
+        otpRequired: true,
+        challenge: response.data,
+      };
     }
 
-    authService.setToken(response.data.token);
+    if (isOtpChallengeResponse(response.data)) {
+      throw new Error('Unable to complete login challenge');
+    }
+
+    authService.setToken(response.data.token, response.data.expires_at);
     setUser(response.data.user);
-    return response.data.user;
+    return {
+      otpRequired: false,
+      user: response.data.user,
+    };
   };
 
   const register = async (data: {
@@ -64,15 +100,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     phone?: string;
   }) => {
     const response = await authService.register(data);
-    authService.setToken(response.data.token);
+    authService.setToken(response.data.token, response.data.expires_at);
     setUser(response.data.user);
+  };
+
+  const verifyOtp = async (email: string, otp: string): Promise<User> => {
+    const response = await authService.verifyOtp(email, Number(otp));
+    authService.setToken(response.data.token, response.data.expires_at);
+    setUser(response.data.user);
+    return response.data.user;
+  };
+
+  const resendOtp = async (email: string): Promise<OtpChallengeResponse> => {
+    const response = await authService.resendOtp(email);
+    return response.data;
   };
 
   const logout = async () => {
     try {
       await authService.logout();
     } finally {
-      authService.setToken('');
+      authService.setToken(null);
       setUser(null);
     }
   };
@@ -90,6 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         login,
         register,
+        verifyOtp,
+        resendOtp,
         logout,
         refreshUser,
       }}

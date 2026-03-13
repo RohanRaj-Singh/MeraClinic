@@ -22,10 +22,13 @@ use App\Http\Controllers\Api\V1\ClinicController;
 // Public Routes
 Route::prefix('v1')->group(function () {
     // Auth
-    Route::post('/auth/register', [AuthController::class, 'register']);
-    Route::post('/auth/login', [AuthController::class, 'login']);
-    Route::post('/auth/otp/verify', [AuthController::class, 'verifyOtp']);
-    Route::post('/auth/password/reset', [AuthController::class, 'resetPassword']);
+    Route::middleware('throttle:20,1')->group(function () {
+        Route::post('/auth/register', [AuthController::class, 'register']);
+        Route::post('/auth/login', [AuthController::class, 'login']);
+        Route::post('/auth/otp/verify', [AuthController::class, 'verifyOtp']);
+        Route::post('/auth/otp/resend', [AuthController::class, 'resendOtp']);
+        Route::post('/auth/password/reset', [AuthController::class, 'resetPassword']);
+    });
 });
 
 // Protected Routes (require authentication)

@@ -21,7 +21,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/', 'confirmed'],
             'clinic_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'patient_prefix' => 'nullable|string|max:10',
@@ -36,6 +36,7 @@ class AuthController extends Controller
                 'user' => $result['user'],
                 'clinic' => $result['clinic'],
                 'token' => $result['token'],
+                'expires_at' => $result['expires_at'],
             ],
         ], 201);
     }
@@ -71,6 +72,10 @@ class AuthController extends Controller
                 'success' => true,
                 'otp_required' => true,
                 'message' => 'Please verify your identity',
+                'data' => [
+                    'email' => $result['email'],
+                    'otp_expires_at' => $result['otp_expires_at'],
+                ],
             ], 200);
         }
 
@@ -80,6 +85,7 @@ class AuthController extends Controller
             'data' => [
                 'user' => $result['user'],
                 'token' => $result['token'],
+                'expires_at' => $result['expires_at'],
             ],
         ]);
     }
@@ -91,7 +97,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'email' => 'required|email',
-            'otp' => 'required|integer|digits:6',
+            'otp' => 'required|string|digits:6',
         ]);
 
         $user = \App\Models\User::where('email', $validated['email'])->first();
@@ -112,15 +118,36 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $token = $user->createToken('auth-token')->plainTextToken;
-
         return response()->json([
             'success' => true,
             'message' => 'OTP verified successfully',
             'data' => [
-                'user' => $user->load('clinic'),
-                'token' => $token,
+                'user' => $verified['user'],
+                'token' => $verified['token'],
+                'expires_at' => $verified['expires_at'],
             ],
+        ]);
+    }
+
+    public function resendOtp(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $result = $this->authService->resendOtp($validated['email']);
+
+        if (!$result) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to resend OTP for this account',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP sent successfully',
+            'data' => $result,
         ]);
     }
 
@@ -174,7 +201,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'current_password' => 'required|string',
-            'new_password' => 'required|string|min:6',
+            'new_password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/'],
         ]);
 
         $updated = $this->authService->updatePassword(

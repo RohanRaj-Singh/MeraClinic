@@ -6,9 +6,11 @@ use App\Models\User;
 use App\Models\Clinic;
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Auth\Events\PasswordReset;
+use DateTimeInterface;
 
 class AuthService
 {
@@ -39,8 +41,7 @@ class AuthService
             'phone' => $data['phone'] ?? null,
         ]);
 
-        // Generate token
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $tokenData = $this->createAccessToken($user);
 
         // Audit log
         AuditLog::log(
@@ -58,7 +59,8 @@ class AuthService
         return [
             'user' => $user,
             'clinic' => $clinic,
-            'token' => $token,
+            'token' => $tokenData['token'],
+            'expires_at' => $tokenData['expires_at'],
         ];
     }
 
@@ -79,15 +81,19 @@ class AuthService
 
         // Check if OTP is required
         if ($this->isOtpRequired($user)) {
-            $this->sendOtp($user);
-            return ['otp_required' => true];
+            $otpData = $this->sendOtp($user);
+
+            return [
+                'otp_required' => true,
+                'email' => $user->email,
+                'otp_expires_at' => $otpData['expires_at'],
+            ];
         }
 
         // Update login info
         $user->updateLoginInfo(request()->ip(), request()->userAgent());
 
-        // Generate token
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $tokenData = $this->createAccessToken($user);
 
         // Audit log
         AuditLog::log(
@@ -102,7 +108,8 @@ class AuthService
 
         return [
             'user' => $user,
-            'token' => $token,
+            'token' => $tokenData['token'],
+            'expires_at' => $tokenData['expires_at'],
         ];
     }
 
@@ -124,29 +131,43 @@ class AuthService
             }
         }
 
+        // Check device change
+        if ($user->device_info !== null && $user->device_info !== request()->userAgent()) {
+            return true;
+        }
+
         return false;
     }
 
     /**
      * Send OTP to user email
      */
-    public function sendOtp(User $user): string
+    public function sendOtp(User $user): array
     {
-        $otp = rand(100000, 999999);
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expiresAt = now()->addMinutes(10);
         
         // Store OTP in cache (expires in 10 minutes)
-        cache()->put('otp_' . $user->id, $otp, now()->addMinutes(10));
+        cache()->put('otp_' . $user->id, $otp, $expiresAt);
 
-        // TODO: Send email with OTP
-        // Mail::to($user->email)->send(new OtpMail($otp));
+        // TODO: Replace log fallback with real mail delivery after SMTP is configured.
+        Log::info('Login OTP generated', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'otp' => $otp,
+            'expires_at' => $expiresAt->toISOString(),
+        ]);
 
-        return $otp;
+        return [
+            'otp' => $otp,
+            'expires_at' => $expiresAt->toISOString(),
+        ];
     }
 
     /**
      * Verify OTP
      */
-    public function verifyOtp(User $user, int $otp): bool
+    public function verifyOtp(User $user, int $otp): ?array
     {
         $cachedOtp = cache()->get('otp_' . $user->id);
         
@@ -156,8 +177,7 @@ class AuthService
             // Update login info after successful OTP verification
             $user->updateLoginInfo(request()->ip(), request()->userAgent());
 
-            // Generate token
-            $token = $user->createToken('auth-token')->plainTextToken;
+            $tokenData = $this->createAccessToken($user);
 
             // Audit log
             AuditLog::log(
@@ -170,10 +190,40 @@ class AuthService
                 request()->userAgent()
             );
 
-            return true;
+            return [
+                'user' => $user->load('clinic'),
+                'token' => $tokenData['token'],
+                'expires_at' => $tokenData['expires_at'],
+            ];
         }
 
-        return false;
+        return null;
+    }
+
+    public function resendOtp(string $email): ?array
+    {
+        $user = User::where('email', $email)->first();
+
+        if (!$user || !$user->is_active) {
+            return null;
+        }
+
+        $otpData = $this->sendOtp($user);
+
+        AuditLog::log(
+            $user->clinic_id,
+            $user->id,
+            'login_otp_resent',
+            'user',
+            $user->id,
+            request()->ip(),
+            request()->userAgent()
+        );
+
+        return [
+            'email' => $user->email,
+            'otp_expires_at' => $otpData['expires_at'],
+        ];
     }
 
     /**
@@ -236,5 +286,23 @@ class AuthService
     public function getAuthUser(): ?User
     {
         return auth()->user()->load('clinic');
+    }
+
+    private function createAccessToken(User $user): array
+    {
+        $expiresAt = $this->resolveTokenExpiration();
+        $token = $user->createToken('auth-token', ['*'], $expiresAt)->plainTextToken;
+
+        return [
+            'token' => $token,
+            'expires_at' => $expiresAt?->toISOString(),
+        ];
+    }
+
+    private function resolveTokenExpiration(): ?DateTimeInterface
+    {
+        $expiration = (int) config('sanctum.expiration');
+
+        return $expiration > 0 ? now()->addMinutes($expiration) : null;
     }
 }

@@ -46,7 +46,13 @@ class ClinicService
      */
     public function getAll(array $filters = []): LengthAwarePaginator
     {
-        $query = Clinic::query();
+        $query = Clinic::query()
+            ->withCount(['users', 'patients', 'visits'])
+            ->with([
+                'users' => fn ($query) => $query
+                    ->select('id', 'clinic_id', 'name', 'email', 'phone', 'is_active')
+                    ->orderBy('id'),
+            ]);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -68,7 +74,14 @@ class ClinicService
      */
     public function getById(int $id): ?Clinic
     {
-        return Clinic::with(['users', 'patients', 'diseases', 'reportTypes'])->find($id);
+        return Clinic::with([
+            'users' => fn ($query) => $query
+                ->select('id', 'clinic_id', 'name', 'email', 'phone', 'is_active', 'last_login_at', 'last_login_ip')
+                ->orderBy('id'),
+            'patients',
+            'diseases',
+            'reportTypes',
+        ])->withCount(['users', 'patients', 'visits'])->find($id);
     }
 
     /**

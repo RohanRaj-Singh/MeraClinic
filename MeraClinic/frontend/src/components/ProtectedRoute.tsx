@@ -1,13 +1,15 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import type { User } from '@/services/auth';
+import { getDefaultRoute } from '@/lib/routing';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireSuperAdmin?: boolean;
+  allowedRoles?: User['role'][];
 }
 
-export default function ProtectedRoute({ children, requireSuperAdmin }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
@@ -26,9 +28,8 @@ export default function ProtectedRoute({ children, requireSuperAdmin }: Protecte
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check for super admin requirement
-  if (requireSuperAdmin && user?.role !== 'super_admin') {
-    return <Navigate to="/dashboard" replace />;
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to={getDefaultRoute(user)} replace />;
   }
 
   return <>{children}</>;

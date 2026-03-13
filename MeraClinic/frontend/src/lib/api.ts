@@ -3,6 +3,10 @@ import { twMerge } from 'tailwind-merge';
 
 // API Base URL - should be configured via environment variable
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const TOKEN_STORAGE_KEY = 'token';
+const TOKEN_EXPIRY_STORAGE_KEY = 'token_expires_at';
+
+export const AUTH_EXPIRED_EVENT = 'meraclinic:auth-expired';
 
 // Helper to merge tailwind classes
 export function cn(...inputs: ClassValue[]) {
@@ -27,21 +31,34 @@ export interface AuthApiResponse<T> {
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  private tokenExpiresAt: string | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    // Get token from localStorage
     if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('token');
+      this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      this.tokenExpiresAt = localStorage.getItem(TOKEN_EXPIRY_STORAGE_KEY);
     }
   }
 
-  setToken(token: string | null) {
+  setToken(token: string | null, expiresAt?: string | null) {
     this.token = token;
+    this.tokenExpiresAt = token ? expiresAt ?? null : null;
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     if (token) {
-      localStorage.setItem('token', token);
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      if (this.tokenExpiresAt) {
+        localStorage.setItem(TOKEN_EXPIRY_STORAGE_KEY, this.tokenExpiresAt);
+      } else {
+        localStorage.removeItem(TOKEN_EXPIRY_STORAGE_KEY);
+      }
     } else {
-      localStorage.removeItem('token');
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_EXPIRY_STORAGE_KEY);
     }
   }
 
@@ -49,10 +66,30 @@ class ApiClient {
     return this.token;
   }
 
+  getTokenExpiresAt(): string | null {
+    return this.tokenExpiresAt;
+  }
+
+  isSessionExpired(): boolean {
+    return !!this.tokenExpiresAt && new Date(this.tokenExpiresAt).getTime() <= Date.now();
+  }
+
+  private notifySessionExpired(message: string) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, { detail: { message } }));
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    if (this.token && this.isSessionExpired()) {
+      this.setToken(null);
+      this.notifySessionExpired('Your session has expired. Please sign in again.');
+      throw new Error('Your session has expired. Please sign in again.');
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
 
     const headers: HeadersInit = {
@@ -69,6 +106,11 @@ class ApiClient {
       ...options,
       headers,
     });
+
+    if (response.status === 401 && this.token) {
+      this.setToken(null);
+      this.notifySessionExpired('Your session has expired. Please sign in again.');
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'An error occurred' }));
@@ -115,6 +157,12 @@ class ApiClient {
 
   // Upload file
   async uploadFile<T>(endpoint: string, file: File, additionalData?: Record<string, unknown>): Promise<T> {
+    if (this.token && this.isSessionExpired()) {
+      this.setToken(null);
+      this.notifySessionExpired('Your session has expired. Please sign in again.');
+      throw new Error('Your session has expired. Please sign in again.');
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     
@@ -136,6 +184,11 @@ class ApiClient {
       headers,
       body: formData,
     });
+
+    if (response.status === 401 && this.token) {
+      this.setToken(null);
+      this.notifySessionExpired('Your session has expired. Please sign in again.');
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'An error occurred' }));

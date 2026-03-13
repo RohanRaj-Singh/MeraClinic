@@ -4,7 +4,6 @@ import {
   LayoutDashboard, 
   Users, 
   Calendar, 
-  FileText, 
   Settings, 
   LogOut,
   Menu,
@@ -18,7 +17,6 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Visits', href: '/visits', icon: Calendar },
-  { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

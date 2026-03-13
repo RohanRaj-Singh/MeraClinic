@@ -124,6 +124,7 @@ class DashboardService
         // Get all clinic stats
         $totalClinics = Clinic::count();
         $activeClinics = Clinic::where('is_active', true)->count();
+        $inactiveClinics = Clinic::where('is_active', false)->count();
         
         // Get total patients across all clinics
         $totalPatients = DB::table('patients')->count();
@@ -131,28 +132,41 @@ class DashboardService
         // Get total visits across all clinics
         $totalVisits = DB::table('visits')->count();
         
-        // Get total revenue
-        $totalRevenue = DB::table('visits')->sum('total_amount');
-        
+        $clinicsThisMonth = Clinic::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+        $patientsThisMonth = DB::table('patients')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+        $visitsThisMonth = DB::table('visits')
+            ->whereMonth('visit_date', now()->month)
+            ->whereYear('visit_date', now()->year)
+            ->count();
+
         // Get recent clinics
-        $recentClinics = Clinic::orderBy('created_at', 'desc')
+        $recentClinics = Clinic::withCount(['patients', 'visits'])
+            ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
         // Get expiring clinics (within 30 days)
-        $expiringClinics = Clinic::whereNotNull('expires_at')
+        $expiringClinics = Clinic::withCount(['patients', 'visits'])
+            ->whereNotNull('expires_at')
             ->where('expires_at', '<=', now()->addDays(30))
             ->where('is_active', true)
             ->get();
 
         return [
-            'stats' => [
-                'total_clinics' => $totalClinics,
-                'active_clinics' => $activeClinics,
-                'total_patients' => $totalPatients,
-                'total_visits' => $totalVisits,
-                'total_revenue' => $totalRevenue,
-            ],
+            'total_clinics' => $totalClinics,
+            'active_clinics' => $activeClinics,
+            'inactive_clinics' => $inactiveClinics,
+            'total_patients' => $totalPatients,
+            'total_visits' => $totalVisits,
+            'expiring_clinics' => $expiringClinics->count(),
+            'clinics_this_month' => $clinicsThisMonth,
+            'patients_this_month' => $patientsThisMonth,
+            'visits_this_month' => $visitsThisMonth,
             'recent_clinics' => $recentClinics,
             'expiring_clinics' => $expiringClinics,
         ];

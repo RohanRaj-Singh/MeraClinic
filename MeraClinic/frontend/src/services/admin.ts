@@ -5,6 +5,7 @@ export interface Clinic {
   id: number;
   name: string;
   slug: string;
+  email?: string;
   address?: string;
   phone?: string;
   whatsapp?: string;
@@ -15,9 +16,33 @@ export interface Clinic {
   created_at: string;
   users_count?: number;
   patients_count?: number;
+  visits_count?: number;
+  users?: ClinicUser[];
 }
 
-export interface SuperAdminStats {
+export interface ClinicUser {
+  id: number;
+  clinic_id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  is_active: boolean;
+  last_login_at?: string;
+  last_login_ip?: string;
+}
+
+export interface ClinicStats {
+  total_patients: number;
+  total_visits: number;
+  total_revenue: number;
+  total_received: number;
+  total_balance: number;
+  patients_this_month: number;
+  visits_this_month: number;
+  revenue_this_month: number;
+}
+
+export interface SuperAdminDashboard {
   total_clinics: number;
   active_clinics: number;
   inactive_clinics: number;
@@ -27,6 +52,8 @@ export interface SuperAdminStats {
   clinics_this_month: number;
   patients_this_month: number;
   visits_this_month: number;
+  recent_clinics: Clinic[];
+  expiring_clinics_list: Clinic[];
 }
 
 export interface ClinicFilters {
@@ -38,8 +65,16 @@ export interface ClinicFilters {
 // Admin Service
 export const adminService = {
   // Get super admin dashboard stats
-  async getStats(): Promise<ApiResponse<SuperAdminStats>> {
-    return api.get<ApiResponse<SuperAdminStats>>('/v1/admin/dashboard');
+  async getStats(): Promise<ApiResponse<SuperAdminDashboard>> {
+    const response = await api.get<ApiResponse<any>>('/v1/admin/dashboard');
+
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        expiring_clinics_list: response.data.expiring_clinics ?? [],
+      },
+    };
   },
 
   // Get all clinics
@@ -106,8 +141,8 @@ export const adminService = {
   },
 
   // Get clinic stats
-  async getClinicStats(id: number): Promise<ApiResponse<any>> {
-    return api.get<ApiResponse<any>>(`/v1/admin/clinics/${id}/stats`);
+  async getClinicStats(id: number): Promise<ApiResponse<ClinicStats>> {
+    return api.get<ApiResponse<ClinicStats>>(`/v1/admin/clinics/${id}/stats`);
   },
 };
 

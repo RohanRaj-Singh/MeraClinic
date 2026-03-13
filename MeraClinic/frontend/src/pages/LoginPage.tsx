@@ -1,35 +1,94 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { canAccessPath, getDefaultRoute } from '@/lib/routing';
+
+interface LoginErrorState {
+  title: string;
+  detail: string;
+  hint?: string;
+}
+
+function getLoginErrorState(error: unknown): LoginErrorState {
+  const message = error instanceof Error ? error.message : 'Unable to sign in right now.';
+
+  switch (message) {
+    case 'Invalid credentials':
+      return {
+        title: 'Login failed',
+        detail: 'The email address or password is incorrect.',
+        hint: 'Check both fields carefully and try again.',
+      };
+    case 'Account is disabled':
+      return {
+        title: 'Account disabled',
+        detail: 'This account has been disabled by an administrator.',
+        hint: 'Contact support or the super admin to restore access.',
+      };
+    case 'Your session has expired. Please sign in again.':
+      return {
+        title: 'Session expired',
+        detail: message,
+        hint: 'Sign in again to continue.',
+      };
+    case 'Unable to complete login':
+      return {
+        title: 'Unexpected login state',
+        detail: 'The server did not return a usable login response.',
+        hint: 'Try again. If the issue persists, check the backend auth response.',
+      };
+    default:
+      return {
+        title: 'Sign-in error',
+        detail: message,
+      };
+  }
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<LoginErrorState | null>(null);
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError(null);
     setIsLoading(true);
 
     try {
-      // Login and get user from response
-      const user = await login(email, password);
-      
-      // Redirect based on user role
-      if (user.role === 'super_admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
+      const result = await login(email, password);
+
+      if (result.otpRequired && result.challenge) {
+        navigate('/login/verify-otp', {
+          replace: true,
+          state: {
+            email: result.challenge.email,
+            otpExpiresAt: result.challenge.otp_expires_at,
+            from: location.state?.from,
+          },
+        });
+        return;
       }
+
+      if (!result.user) {
+        throw new Error('Unable to complete login');
+      }
+
+      const requestedPath = location.state?.from?.pathname;
+      const redirectTo = requestedPath && canAccessPath(result.user, requestedPath)
+        ? requestedPath
+        : getDefaultRoute(result.user);
+
+      navigate(redirectTo, { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials');
+      setError(getLoginErrorState(err));
     } finally {
       setIsLoading(false);
     }
@@ -55,8 +114,12 @@ export default function LoginPage() {
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Sign In</h2>
           
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-              {error}
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm">
+              <p className="font-semibold text-red-700">{error.title}</p>
+              <p className="mt-1 text-red-600">{error.detail}</p>
+              {error.hint && (
+                <p className="mt-2 text-red-500">{error.hint}</p>
+              )}
             </div>
           )}
 
