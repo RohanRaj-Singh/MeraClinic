@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Mail\OtpMail;
 use App\Models\User;
 use App\Models\Clinic;
 use App\Models\AuditLog;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
@@ -150,13 +152,23 @@ class AuthService
         // Store OTP in cache (expires in 10 minutes)
         cache()->put('otp_' . $user->id, $otp, $expiresAt);
 
-        // TODO: Replace log fallback with real mail delivery after SMTP is configured.
-        Log::info('Login OTP generated', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'otp' => $otp,
-            'expires_at' => $expiresAt->toISOString(),
-        ]);
+        try {
+            Mail::to($user->email)->send(
+                new OtpMail(
+                    user: $user,
+                    otp: $otp,
+                    expiresAt: $expiresAt->setTimezone(config('app.timezone'))->format('d M Y h:i A')
+                )
+            );
+        } catch (\Throwable $exception) {
+            Log::error('Failed to send login OTP email', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'otp' => $otp,
+                'expires_at' => $expiresAt->toISOString(),
+                'error' => $exception->getMessage(),
+            ]);
+        }
 
         return [
             'otp' => $otp,

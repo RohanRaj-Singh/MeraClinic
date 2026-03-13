@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const verifyOtp = async (email: string, otp: string): Promise<User> => {
-    const response = await authService.verifyOtp(email, Number(otp));
+    const response = await authService.verifyOtp(email, otp);
     authService.setToken(response.data.token, response.data.expires_at);
     setUser(response.data.user);
     return response.data.user;

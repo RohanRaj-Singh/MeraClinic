@@ -78,7 +78,7 @@ export const authService = {
   },
 
   // Verify OTP
-  async verifyOtp(email: string, otp: number): Promise<ApiResponse<AuthResponse>> {
+  async verifyOtp(email: string, otp: string): Promise<ApiResponse<AuthResponse>> {
     return api.post<ApiResponse<AuthResponse>>('/v1/auth/otp/verify', { email, otp });
   },
 

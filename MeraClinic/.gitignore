@@ -12,6 +12,7 @@
 
 # Environment files (keep .env.example)
 backend/.env
+backend/.env.production
 .env
 
 # Laravel logs
@@ -55,6 +56,7 @@ frontend/dist/
 
 # Environment files (keep .env.example)
 frontend/.env
+frontend/.env.production
 .env
 .env.local
 .env.production
