@@ -1,0 +1,200 @@
+# =============================================
+# Mera Clinic - Git Ignore Configuration
+# =============================================
+
+# ---------------------------------------------
+# Laravel Backend
+# ---------------------------------------------
+
+# Dependencies
+/vendor/
+/backend/vendor/
+
+# Environment files (keep .env.example)
+backend/.env
+.env
+
+# Laravel logs
+/backend/storage/logs/*.log
+/storage/logs/*.log
+
+# Laravel cache
+/backend/storage/framework/cache/*
+/backend/storage/framework/views/*
+/storage/framework/cache/*
+/storage/framework/views/*
+!backend/storage/framework/cache/.gitkeep
+!backend/storage/framework/views/.gitkeep
+
+# Composer cache
+/backend/.composer/*
+.composer/*
+
+# PHP IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# PHP temporary files
+.phpunit.result.cache
+.php
+~
+
+# ---------------------------------------------
+# React Frontend
+# ---------------------------------------------
+
+# Dependencies
+/node_modules/
+frontend/node_modules/
+
+# Build output
+/dist/
+frontend/dist/
+
+# Environment files (keep .env.example)
+frontend/.env
+.env
+.env.local
+.env.production
+
+# Vite cache
+frontend/.vite/
+
+# React build cache
+frontend/node_modules/.cache/
+
+# TypeScript cache
+*.tsbuildinfo
+frontend/*.tsbuildinfo
+
+# ---------------------------------------------
+# Documentation
+# ---------------------------------------------
+
+# Generated docs (if any)
+site/
+.jekyll-cache/
+.jekyll-metadata
+
+# ---------------------------------------------
+# OS and Editor Files
+# ---------------------------------------------
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+sftp-config.json
+Package Control.last-run
+Package Control.ca-list
+Package Control.ca-bundle
+Package Control.system-ca-bundle
+Package Control.cache/
+Package Control.ca-certs/
+bh_hierarchies.cache
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+out/
+.idea_modules/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Vim
+[._]*.s[a-v][a-z]
+!*/.gitkeep
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+.netrwhist
+*~
+
+# Kate
+.*kate/
+*~.kate/
+
+# ---------------------------------------------
+# Build and Deployment
+# ---------------------------------------------
+
+# Build artifacts
+*.phar
+*.zip
+*.tar.gz
+*.tar
+*.rar
+
+# Deploy scripts output
+/deploy/.deploy*/
+deploy/.env
+
+# Docker
+.docker/
+
+# ---------------------------------------------
+# Misc
+# ---------------------------------------------
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
+*.log
+
+# Test and coverage
+/coverage/
+.phpunit.coverage
+.phpunit.coverage.xml
+.phpunit.xml
+/tests/_output/
+
+# API documentation cache
+/.api-cache/
