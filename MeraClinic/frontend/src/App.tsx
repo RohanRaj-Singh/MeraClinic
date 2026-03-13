@@ -11,6 +11,7 @@ import AdminClinics from '@/pages/admin/Clinics'
 import LoginPage from '@/pages/LoginPage'
 import OtpVerificationPage from '@/pages/OtpVerificationPage'
 import RegisterPage from '@/pages/RegisterPage'
+import ApprovalPendingPage from '@/pages/ApprovalPendingPage'
 import DashboardPage from '@/pages/DashboardPage'
 import PatientsPage from '@/pages/patients/Index'
 import VisitsPage from '@/pages/visits/Index'
@@ -70,6 +71,14 @@ function AppRoutes() {
         element={
           <PublicOnlyRoute>
             <RegisterPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/approval-pending"
+        element={
+          <PublicOnlyRoute>
+            <ApprovalPendingPage />
           </PublicOnlyRoute>
         }
       />

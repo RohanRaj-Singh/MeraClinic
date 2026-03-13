@@ -31,12 +31,11 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Registration successful',
+            'message' => 'Registration submitted successfully. Waiting for approval.',
             'data' => [
                 'user' => $result['user'],
                 'clinic' => $result['clinic'],
-                'token' => $result['token'],
-                'expires_at' => $result['expires_at'],
+                'waiting_approval' => $result['waiting_approval'],
             ],
         ], 201);
     }

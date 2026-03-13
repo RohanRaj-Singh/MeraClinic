@@ -29,6 +29,7 @@ const translations = {
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [clinicLoading, setClinicLoading] = useState(true);
   const [clinicData, setClinicData] = useState<UpdateClinicData>({
     name: '',
     address: '',
@@ -47,16 +48,6 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    // Load clinic data from user
-    if (user?.clinic) {
-      setClinicData({
-        name: user.clinic.name || '',
-        address: user.clinic.address || '',
-        phone: user.clinic.phone || '',
-        whatsapp: user.clinic.whatsapp || '',
-        patient_prefix: user.clinic.patient_prefix || '',
-      });
-    }
     if (user) {
       setProfileData({
         name: user.name || '',
@@ -65,6 +56,27 @@ export default function SettingsPage() {
     }
   }, [user]);
 
+  useEffect(() => {
+    const loadClinic = async () => {
+      try {
+        const response = await clinicService.getClinic();
+        setClinicData({
+          name: response.data.name || '',
+          address: response.data.address || '',
+          phone: response.data.phone || '',
+          whatsapp: response.data.whatsapp || '',
+          patient_prefix: response.data.patient_prefix || '',
+        });
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to load clinic settings');
+      } finally {
+        setClinicLoading(false);
+      }
+    };
+
+    loadClinic();
+  }, []);
+
   const handleClinicSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -72,8 +84,8 @@ export default function SettingsPage() {
       await clinicService.updateClinic(clinicData);
       await refreshUser();
       toast.success('Clinic settings saved successfully');
-    } catch (error) {
-      toast.error('Failed to save clinic settings');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save clinic settings');
     } finally {
       setLoading(false);
     }
@@ -86,8 +98,8 @@ export default function SettingsPage() {
       await clinicService.updateProfile(profileData);
       await refreshUser();
       toast.success('Profile updated successfully');
-    } catch (error) {
-      toast.error('Failed to update profile');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -141,6 +153,11 @@ export default function SettingsPage() {
           </div>
           
           <form onSubmit={handleClinicSubmit} className="space-y-4">
+            {clinicLoading && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                Loading latest clinic settings...
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

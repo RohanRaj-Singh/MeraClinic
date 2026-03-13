@@ -26,6 +26,12 @@ function getLoginErrorState(error: unknown): LoginErrorState {
         detail: 'This account has been disabled by an administrator.',
         hint: 'Contact support or the super admin to restore access.',
       };
+    case 'Your clinic is waiting for super admin approval.':
+      return {
+        title: 'Approval pending',
+        detail: 'Your clinic registration is still waiting for super admin approval.',
+        hint: 'Check your email for the approval message, then sign in again.',
+      };
     case 'Your session has expired. Please sign in again.':
       return {
         title: 'Session expired',
@@ -112,6 +118,9 @@ export default function LoginPage() {
         {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Sign In</h2>
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            New clinic registrations stay locked until a super admin approves the clinic. You will receive an email when access is ready.
+          </div>
           
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm">

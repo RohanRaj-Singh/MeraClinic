@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Mail\NewClinicRegistrationAlertMail;
 use App\Mail\OtpMail;
+use App\Mail\RegistrationPendingMail;
 use App\Models\User;
 use App\Models\Clinic;
 use App\Models\AuditLog;
@@ -21,7 +23,6 @@ class AuthService
      */
     public function register(array $data): array
     {
-        // Create clinic
         $clinic = Clinic::create([
             'name' => $data['clinic_name'],
             'slug' => Str::slug($data['clinic_name']) . '-' . time(),
@@ -30,10 +31,9 @@ class AuthService
             'patient_prefix' => strtoupper($data['patient_prefix'] ?? Clinic::DEFAULT_PATIENT_PREFIX),
             'patient_counter' => 0,
             'subscription_status' => 'trial',
-            'is_active' => true,
+            'is_active' => false,
         ]);
 
-        // Create doctor user
         $user = User::create([
             'clinic_id' => $clinic->id,
             'name' => $data['name'],
@@ -41,11 +41,10 @@ class AuthService
             'password' => Hash::make($data['password']),
             'role' => User::ROLE_DOCTOR,
             'phone' => $data['phone'] ?? null,
+            'is_active' => false,
         ]);
+        $this->sendRegistrationNotifications($user, $clinic);
 
-        $tokenData = $this->createAccessToken($user);
-
-        // Audit log
         AuditLog::log(
             $clinic->id,
             $user->id,
@@ -61,8 +60,7 @@ class AuthService
         return [
             'user' => $user,
             'clinic' => $clinic,
-            'token' => $tokenData['token'],
-            'expires_at' => $tokenData['expires_at'],
+            'waiting_approval' => true,
         ];
     }
 
@@ -71,13 +69,21 @@ class AuthService
      */
     public function login(string $email, string $password): ?array
     {
-        $user = User::where('email', $email)->first();
+        $user = User::with('clinic')->where('email', $email)->first();
 
         if (!$user || !Hash::check($password, $user->password)) {
             return null;
         }
 
         if (!$user->is_active) {
+            if (
+                $user->role === User::ROLE_DOCTOR &&
+                $user->clinic !== null &&
+                !$user->clinic->is_active
+            ) {
+                return ['error' => 'Your clinic is waiting for super admin approval.'];
+            }
+
             return ['error' => 'Account is disabled'];
         }
 
@@ -332,5 +338,57 @@ class AuthService
         $expiration = (int) config('sanctum.expiration');
 
         return $expiration > 0 ? now()->addMinutes($expiration) : null;
+    }
+
+    private function sendRegistrationNotifications(User $user, Clinic $clinic): void
+    {
+        $mailDriver = (string) config('mail.default');
+
+        try {
+            Log::info('Sending registration pending email', [
+                'user_id' => $user->id,
+                'clinic_id' => $clinic->id,
+                'email' => $user->email,
+                'mailer' => $mailDriver,
+            ]);
+
+            Mail::to($user->email)->send(new RegistrationPendingMail($user, $clinic));
+        } catch (\Throwable $exception) {
+            Log::error('Failed to send registration pending email', [
+                'user_id' => $user->id,
+                'clinic_id' => $clinic->id,
+                'email' => $user->email,
+                'mailer' => $mailDriver,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+
+        $superAdminEmails = User::query()
+            ->where('role', User::ROLE_SUPER_ADMIN)
+            ->where('is_active', true)
+            ->pluck('email')
+            ->filter()
+            ->values();
+
+        if ($superAdminEmails->isEmpty()) {
+            return;
+        }
+
+        try {
+            Log::info('Sending new clinic registration alert email', [
+                'clinic_id' => $clinic->id,
+                'mailer' => $mailDriver,
+                'recipients' => $superAdminEmails->all(),
+            ]);
+
+            Mail::to($superAdminEmails->all())->send(new NewClinicRegistrationAlertMail($user, $clinic));
+        } catch (\Throwable $exception) {
+            Log::error('Failed to send new clinic registration alert email', [
+                'clinic_id' => $clinic->id,
+                'mailer' => $mailDriver,
+                'recipients' => $superAdminEmails->all(),
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 }

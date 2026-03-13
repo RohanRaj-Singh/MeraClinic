@@ -27,6 +27,12 @@ export interface AuthResponse {
   expires_at: string | null;
 }
 
+export interface RegisterResponse {
+  user: User;
+  clinic: Clinic;
+  waiting_approval: boolean;
+}
+
 export interface OtpChallengeResponse {
   email: string;
   otp_expires_at: string | null;
@@ -61,8 +67,8 @@ export const authService = {
   },
 
   // Register
-  async register(data: RegisterData): Promise<ApiResponse<AuthResponse>> {
-    return api.post<ApiResponse<AuthResponse>>('/v1/auth/register', data);
+  async register(data: RegisterData): Promise<ApiResponse<RegisterResponse>> {
+    return api.post<ApiResponse<RegisterResponse>>('/v1/auth/register', data);
   },
 
   // Logout

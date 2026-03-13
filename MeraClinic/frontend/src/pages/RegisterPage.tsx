@@ -43,7 +43,13 @@ export default function RegisterPage() {
         clinic_name: formData.clinicName,
         phone: formData.phone,
       });
-      navigate('/dashboard');
+      navigate('/approval-pending', {
+        replace: true,
+        state: {
+          email: formData.email,
+          clinicName: formData.clinicName,
+        },
+      });
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -152,7 +158,7 @@ export default function RegisterPage() {
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20 outline-none transition pr-12"
                     placeholder="••••••••"
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                   <button
                     type="button"
@@ -176,6 +182,7 @@ export default function RegisterPage() {
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20 outline-none transition"
                   placeholder="••••••••"
                   required
+                  minLength={8}
                 />
               </div>
             </div>

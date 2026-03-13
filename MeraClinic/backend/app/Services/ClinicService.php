@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Mail\ClinicApprovedMail;
 use App\Models\Clinic;
 use App\Models\User;
 use App\Models\AuditLog;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class ClinicService
@@ -27,6 +30,7 @@ class ClinicService
     {
         $clinicId = auth()->user()->clinic_id;
         $clinic = Clinic::findOrFail($clinicId);
+        $oldValues = $clinic->toArray();
 
         $clinic->update([
             'name' => $data['name'] ?? $clinic->name,
@@ -37,6 +41,18 @@ class ClinicService
                 ? strtoupper($data['patient_prefix'])
                 : $clinic->patient_prefix,
         ]);
+
+        AuditLog::log(
+            $clinic->id,
+            auth()->id(),
+            'update',
+            'clinic',
+            $clinic->id,
+            request()->ip(),
+            request()->userAgent(),
+            $oldValues,
+            $clinic->fresh()->toArray()
+        );
 
         return $clinic->fresh();
     }
@@ -183,10 +199,10 @@ class ClinicService
         }
 
         $oldValues = $clinic->toArray();
+        $wasInactive = !$clinic->is_active;
         
         $clinic->update(['is_active' => !$clinic->is_active]);
 
-        // Disable all users in clinic
         User::where('clinic_id', $clinic->id)->update(['is_active' => $clinic->is_active]);
 
         // Audit log
@@ -202,7 +218,13 @@ class ClinicService
             $clinic->fresh()->toArray()
         );
 
-        return $clinic->fresh();
+        $updatedClinic = $clinic->fresh();
+
+        if ($wasInactive && $updatedClinic->is_active) {
+            $this->sendApprovalEmail($updatedClinic);
+        }
+
+        return $updatedClinic;
     }
 
     /**
@@ -294,5 +316,40 @@ class ClinicService
             'visits_this_month' => $clinic->visits()->whereMonth('visit_date', now()->month)->count(),
             'revenue_this_month' => $clinic->visits()->whereMonth('visit_date', now()->month)->sum('total_amount'),
         ];
+    }
+
+    private function sendApprovalEmail(Clinic $clinic): void
+    {
+        $user = User::query()
+            ->where('clinic_id', $clinic->id)
+            ->where('role', User::ROLE_DOCTOR)
+            ->orderBy('id')
+            ->first();
+
+        if (!$user?->email) {
+            return;
+        }
+
+        $mailDriver = (string) config('mail.default');
+        $loginUrl = rtrim((string) env('FRONTEND_URL', config('app.url')), '/') . '/login';
+
+        try {
+            Log::info('Sending clinic approval email', [
+                'clinic_id' => $clinic->id,
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'mailer' => $mailDriver,
+            ]);
+
+            Mail::to($user->email)->send(new ClinicApprovedMail($user, $clinic, $loginUrl));
+        } catch (\Throwable $exception) {
+            Log::error('Failed to send clinic approval email', [
+                'clinic_id' => $clinic->id,
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'mailer' => $mailDriver,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 }

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService, AuthResponse, OtpChallengeResponse, User } from '@/services/auth';
+import { authService, AuthResponse, OtpChallengeResponse, RegisterResponse, User } from '@/services/auth';
 import { AUTH_EXPIRED_EVENT } from '@/lib/api';
 
 interface LoginResult {
@@ -20,7 +20,7 @@ interface AuthContextType {
     password_confirmation: string;
     clinic_name: string;
     phone?: string;
-  }) => Promise<void>;
+  }) => Promise<RegisterResponse>;
   verifyOtp: (email: string, otp: string) => Promise<User>;
   resendOtp: (email: string) => Promise<OtpChallengeResponse>;
   logout: () => Promise<void>;
@@ -100,8 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     phone?: string;
   }) => {
     const response = await authService.register(data);
-    authService.setToken(response.data.token, response.data.expires_at);
-    setUser(response.data.user);
+    return response.data;
   };
 
   const verifyOtp = async (email: string, otp: string): Promise<User> => {
