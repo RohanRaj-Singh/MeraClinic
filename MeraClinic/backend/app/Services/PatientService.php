@@ -7,6 +7,8 @@ use App\Models\Clinic;
 use App\Models\AuditLog;
 use App\Models\Report;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PatientService
 {
@@ -48,58 +50,72 @@ class PatientService
      */
     public function create(array $data): Patient
     {
-        $clinic = Clinic::find($data['clinic_id']);
-        
-        $patient = Patient::create([
-            'clinic_id' => $data['clinic_id'],
-            'user_id' => auth()->id(),
-            'reference_number' => $clinic->generatePatientReferenceNumber(),
-            'name' => $data['name'],
-            'phone' => $data['phone'] ?? null,
-            'whatsapp' => $data['whatsapp'] ?? null,
-            'address' => $data['address'] ?? null,
-            'country' => $data['country'] ?? 'Pakistan',
-            'gender' => $data['gender'] ?? null,
-            'age' => $data['age'] ?? null,
-            'date_of_birth' => $data['date_of_birth'] ?? null,
-            'diseases' => $data['diseases'] ?? null,
-            'prescription' => $data['prescription'] ?? null,
-            'notes' => $data['notes'] ?? null,
-        ]);
+        try {
+            return DB::transaction(function () use ($data) {
+                $clinic = Clinic::find($data['clinic_id']);
 
-        // Attach diseases if provided
-        if (!empty($data['disease_ids'])) {
-            $patient->diseaseList()->attach($data['disease_ids']);
-        }
+                if (!$clinic) {
+                    throw new \RuntimeException('Clinic not found for patient creation.');
+                }
 
-        // Create reports if provided
-        if (!empty($data['reports'])) {
-            foreach ($data['reports'] as $report) {
-                Report::create([
+                $patient = Patient::create([
                     'clinic_id' => $data['clinic_id'],
-                    'patient_id' => $patient->id,
-                    'report_type_id' => $report['report_type_id'],
-                    'value' => $report['value'],
-                    'notes' => $report['notes'] ?? null,
-                    'report_date' => now()->toDateString(),
+                    'user_id' => auth()->id(),
+                    'reference_number' => $clinic->generatePatientReferenceNumber(),
+                    'name' => $data['name'],
+                    'phone' => $data['phone'] ?? null,
+                    'whatsapp' => $data['whatsapp'] ?? null,
+                    'address' => $data['address'] ?? null,
+                    'country' => $data['country'] ?? 'Pakistan',
+                    'gender' => $data['gender'] ?? null,
+                    'age' => $data['age'] ?? null,
+                    'date_of_birth' => $data['date_of_birth'] ?? null,
+                    'diseases' => $data['diseases'] ?? null,
+                    'prescription' => $data['prescription'] ?? null,
+                    'notes' => $data['notes'] ?? null,
                 ]);
-            }
+
+                if (!empty($data['disease_ids'])) {
+                    $patient->diseaseList()->attach($data['disease_ids']);
+                }
+
+                if (!empty($data['reports'])) {
+                    foreach ($data['reports'] as $report) {
+                        Report::create([
+                            'clinic_id' => $data['clinic_id'],
+                            'patient_id' => $patient->id,
+                            'report_type_id' => $report['report_type_id'],
+                            'value' => $report['value'],
+                            'notes' => $report['notes'] ?? null,
+                            'report_date' => now()->toDateString(),
+                        ]);
+                    }
+                }
+
+                AuditLog::log(
+                    $data['clinic_id'],
+                    auth()->id(),
+                    'create',
+                    'patient',
+                    $patient->id,
+                    request()->ip(),
+                    request()->userAgent(),
+                    null,
+                    $patient->toArray()
+                );
+
+                return $patient;
+            });
+        } catch (\Throwable $exception) {
+            Log::error('Patient creation failed', [
+                'clinic_id' => $data['clinic_id'] ?? null,
+                'user_id' => auth()->id(),
+                'payload' => $data,
+                'error' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
         }
-
-        // Audit log
-        AuditLog::log(
-            $data['clinic_id'],
-            auth()->id(),
-            'create',
-            'patient',
-            $patient->id,
-            request()->ip(),
-            request()->userAgent(),
-            null,
-            $patient->toArray()
-        );
-
-        return $patient;
     }
 
     /**

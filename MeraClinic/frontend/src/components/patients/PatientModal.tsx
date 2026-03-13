@@ -21,8 +21,8 @@ export function PatientModal({ onClose, onSuccess }: PatientModalProps) {
       toast.success('Patient added successfully');
       onClose();
       onSuccess?.();
-    } catch {
-      toast.error('Failed to add patient');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add patient');
     } finally {
       setIsLoading(false);
     }

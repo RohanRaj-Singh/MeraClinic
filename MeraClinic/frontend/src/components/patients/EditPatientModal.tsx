@@ -27,8 +27,8 @@ export function EditPatientModal({ patient, onClose, onSuccess }: EditPatientMod
       toast.success('Patient updated successfully');
       onClose();
       onSuccess?.();
-    } catch {
-      toast.error('Failed to update patient');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update patient');
     } finally {
       setIsLoading(false);
     }
