@@ -97,14 +97,14 @@ export function VisitForm({
     (file) => file.type === 'image' && !deletedImageIds.includes(file.id)
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload: CreateVisitData = {
       ...formData,
       prescription: prescriptionMode === 'text' ? formData.prescription : undefined,
     };
 
-    onSubmit(payload, {
+    await onSubmit(payload, {
       prescriptionMode,
       prescriptionImageFile,
     });
@@ -308,6 +308,7 @@ export function VisitForm({
           <button
             type="button"
             onClick={onCancel}
+            disabled={isLoading}
             className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
           >
             Cancel
@@ -317,7 +318,7 @@ export function VisitForm({
             disabled={isLoading || formData.patient_id === 0}
             className="w-full flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
           >
-            {isLoading ? 'Saving...' : visit ? 'Update Visit' : 'Create Visit'}
+            {isLoading ? (visit ? 'Updating...' : 'Adding...') : visit ? 'Update Visit' : 'Add Visit'}
           </button>
         </div>
       </div>

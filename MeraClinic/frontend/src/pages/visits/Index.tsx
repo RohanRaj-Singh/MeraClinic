@@ -13,6 +13,7 @@ export default function VisitsPage() {
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [filters, setFilters] = useState<VisitFilters>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [submittingVisit, setSubmittingVisit] = useState(false);
 
   const { visits, loading, fetchVisits, filterByDate, filterByStatus } = useVisits(filters);
   const { createVisit, loading: creating } = useCreateVisit();
@@ -55,21 +56,27 @@ export default function VisitsPage() {
     data: CreateVisitData,
     options: { prescriptionMode: 'image' | 'text'; prescriptionImageFile?: File | null }
   ) => {
-    const createdVisit = await createVisit(data);
+    setSubmittingVisit(true);
 
-    if (options.prescriptionMode === 'image' && options.prescriptionImageFile) {
-      try {
-        await fileService.upload(options.prescriptionImageFile, {
-          patient_id: data.patient_id,
-          visit_id: createdVisit.id,
-        });
-      } catch (error) {
-        toast.error('Visit saved, but prescription image upload failed');
+    try {
+      const createdVisit = await createVisit(data);
+
+      if (options.prescriptionMode === 'image' && options.prescriptionImageFile) {
+        try {
+          await fileService.upload(options.prescriptionImageFile, {
+            patient_id: data.patient_id,
+            visit_id: createdVisit.id,
+          });
+        } catch (error) {
+          toast.error('Visit saved, but prescription image upload failed');
+        }
       }
-    }
 
-    setShowForm(false);
-    fetchVisits();
+      setShowForm(false);
+      fetchVisits();
+    } finally {
+      setSubmittingVisit(false);
+    }
   }, [createVisit, fetchVisits]);
 
   const handleUpdateVisit = useCallback(async (
@@ -78,22 +85,28 @@ export default function VisitsPage() {
   ) => {
     if (!editingVisit) return;
 
-    const updatedVisit = await updateVisit(editingVisit.id, data);
+    setSubmittingVisit(true);
 
-    if (options.prescriptionMode === 'image' && options.prescriptionImageFile) {
-      try {
-        await fileService.upload(options.prescriptionImageFile, {
-          patient_id: editingVisit.patient_id,
-          visit_id: updatedVisit.id,
-        });
-      } catch (error) {
-        toast.error('Visit updated, but prescription image upload failed');
+    try {
+      const updatedVisit = await updateVisit(editingVisit.id, data);
+
+      if (options.prescriptionMode === 'image' && options.prescriptionImageFile) {
+        try {
+          await fileService.upload(options.prescriptionImageFile, {
+            patient_id: editingVisit.patient_id,
+            visit_id: updatedVisit.id,
+          });
+        } catch (error) {
+          toast.error('Visit updated, but prescription image upload failed');
+        }
       }
-    }
 
-    setEditingVisit(undefined);
-    setShowForm(false);
-    fetchVisits();
+      setEditingVisit(undefined);
+      setShowForm(false);
+      fetchVisits();
+    } finally {
+      setSubmittingVisit(false);
+    }
   }, [editingVisit, updateVisit, fetchVisits]);
 
   const handlePayment = useCallback(async (amount: number) => {
@@ -213,7 +226,7 @@ export default function VisitsPage() {
                 visit={editingVisit}
                 onSubmit={editingVisit ? handleUpdateVisit : handleCreateVisit}
                 onCancel={closeForm}
-                isLoading={creating || updating}
+                isLoading={creating || updating || submittingVisit}
               />
             </div>
           </div>

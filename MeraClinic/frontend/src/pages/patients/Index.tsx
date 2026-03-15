@@ -24,6 +24,7 @@ export default function PatientsPage() {
   const [editingPatient, setEditingPatient] = useState<Patient | undefined>();
   const [selectedPatient, setSelectedPatient] = useState<PatientWithReports | null>(null);
   const [showVisitForm, setShowVisitForm] = useState(false);
+  const [submittingVisit, setSubmittingVisit] = useState(false);
 
   const { patients, loading, fetchPatients, searchPatients } = usePatients();
   const { createVisit, loading: creatingVisit } = useCreateVisit();
@@ -51,21 +52,27 @@ export default function PatientsPage() {
   ) => {
     if (!selectedPatient) return;
 
-    const createdVisit = await createVisit({ ...data, patient_id: selectedPatient.id });
+    setSubmittingVisit(true);
 
-    if (options.prescriptionMode === 'image' && options.prescriptionImageFile) {
-      try {
-        await fileService.upload(options.prescriptionImageFile, {
-          patient_id: selectedPatient.id,
-          visit_id: createdVisit.id,
-        });
-      } catch (error) {
-        toast.error('Visit saved, but prescription image upload failed');
+    try {
+      const createdVisit = await createVisit({ ...data, patient_id: selectedPatient.id });
+
+      if (options.prescriptionMode === 'image' && options.prescriptionImageFile) {
+        try {
+          await fileService.upload(options.prescriptionImageFile, {
+            patient_id: selectedPatient.id,
+            visit_id: createdVisit.id,
+          });
+        } catch (error) {
+          toast.error('Visit saved, but prescription image upload failed');
+        }
       }
-    }
 
-    toast.success('Visit added successfully');
-    setShowVisitForm(false);
+      toast.success('Visit added successfully');
+      setShowVisitForm(false);
+    } finally {
+      setSubmittingVisit(false);
+    }
   }, [selectedPatient, createVisit]);
 
   const closeForm = useCallback(() => {
@@ -162,7 +169,7 @@ export default function PatientsPage() {
                 lockedPatient={selectedPatient}
                 onSubmit={handleVisitFormSubmit}
                 onCancel={() => setShowVisitForm(false)}
-                isLoading={creatingVisit}
+                isLoading={creatingVisit || submittingVisit}
               />
             </div>
           </div>

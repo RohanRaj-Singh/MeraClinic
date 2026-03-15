@@ -186,13 +186,14 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-[#2E7D32] hover:text-[#1B5E20] font-medium">
-                Register Clinic
-              </Link>
-            </p>
+          <div className="mt-6 space-y-3 text-center">
+            <p className="text-sm text-gray-600">Don't have an account yet?</p>
+            <Link
+              to="/register"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-[#2E7D32] px-4 py-3 font-medium text-[#2E7D32] transition hover:bg-[#E8F5E9] hover:text-[#1B5E20]"
+            >
+              Register Clinic
+            </Link>
           </div>
         </div>
 

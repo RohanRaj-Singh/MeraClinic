@@ -38,22 +38,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isActive = true;
     const token = authService.getToken();
+
     if (token && !authService.isSessionExpired()) {
       authService.me()
         .then((response) => {
+          if (!isActive || authService.getToken() !== token) {
+            return;
+          }
           setUser(response.data);
         })
         .catch(() => {
-          authService.setToken(null);
+          if (authService.getToken() === token) {
+            authService.setToken(null);
+          }
         })
         .finally(() => {
-          setIsLoading(false);
+          if (isActive) {
+            setIsLoading(false);
+          }
         });
     } else {
       authService.setToken(null);
       setIsLoading(false);
     }
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   useEffect(() => {
